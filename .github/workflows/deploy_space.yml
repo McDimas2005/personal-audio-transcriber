@@ -1,0 +1,51 @@
+name: Deploy to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Replace this with your actual Hugging Face Space path.
+      HF_SPACE_ID: YOUR_HF_USERNAME/YOUR_SPACE_NAME
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure Git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Clone Hugging Face Space repository
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "HF_TOKEN secret is required."
+            exit 1
+          fi
+
+          git clone "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_ID}" "${RUNNER_TEMP}/hf-space"
+
+      - name: Sync project files into Space repository
+        run: |
+          rsync -av --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            "${GITHUB_WORKSPACE}/" "${RUNNER_TEMP}/hf-space/"
+
+      - name: Commit and push only when changes exist
+        working-directory: ${{ runner.temp }}/hf-space
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add --all
+            git commit -m "Deploy from GitHub Actions ${GITHUB_SHA}"
+            git push origin main
+          else
+            echo "No deployment changes detected."
+          fi
