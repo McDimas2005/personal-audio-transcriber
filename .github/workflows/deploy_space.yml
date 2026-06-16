@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Replace this with your actual Hugging Face Space path.
-      HF_SPACE_ID: TsukishimaAlan20/personal-audio-transcriber
+      # HF_SPACE_ID: TsukishimaAlan20/personal-audio-transcriber
+      HF_SPACE_ID: DimasAI20/personal-audio-transcriber
 
     steps:
       - name: Check out repository
